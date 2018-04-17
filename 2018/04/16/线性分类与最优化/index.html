@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.3" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.3">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.3" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="SVM,softmax," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="1.分类器的核心思想上一节介绍的knn算法每次在进行预测时，必须计算预测集与训练集的距离，这样不仅加大了计算量，而且使得预测耗时很长。所以说，我们可以利用训练集，抽象出一个数学模型，作为图片像素值与其对应的标签的一个映射。 这个模型有两部分组成，一部分是评分函数，也就是我们所说的抽象总结出来的映射关系，另一部分是损失函数，这个函数来评价评分函数的好坏，我们的目标，就是使得评分函数预测出来最准确，也">
+<meta name="keywords" content="SVM,softmax">
+<meta property="og:type" content="article">
+<meta property="og:title" content="线性分类与最优化学习总结">
+<meta property="og:url" content="http://yoursite.com/2018/04/16/线性分类与最优化/index.html">
+<meta property="og:site_name" content="Li Shuoshi&#39;s Blog">
+<meta property="og:description" content="1.分类器的核心思想上一节介绍的knn算法每次在进行预测时，必须计算预测集与训练集的距离，这样不仅加大了计算量，而且使得预测耗时很长。所以说，我们可以利用训练集，抽象出一个数学模型，作为图片像素值与其对应的标签的一个映射。 这个模型有两部分组成，一部分是评分函数，也就是我们所说的抽象总结出来的映射关系，另一部分是损失函数，这个函数来评价评分函数的好坏，我们的目标，就是使得评分函数预测出来最准确，也">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://oxlm7lfiw.bkt.clouddn.com/xianxing_1.jpg">
+<meta property="og:image" content="http://oxlm7lfiw.bkt.clouddn.com/xianxing_2.jpg">
+<meta property="og:image" content="http://oxlm7lfiw.bkt.clouddn.com/xianxing_3.jpg">
+<meta property="og:image" content="http://oxlm7lfiw.bkt.clouddn.com/xianxing_4.jpg">
+<meta property="og:image" content="http://oxlm7lfiw.bkt.clouddn.com/xianxing_6.jpg">
+<meta property="og:image" content="http://oxlm7lfiw.bkt.clouddn.com/xianxing_8.jpg">
+<meta property="og:image" content="http://oxlm7lfiw.bkt.clouddn.com/xianxing_20.jpg">
+<meta property="og:image" content="http://oxlm7lfiw.bkt.clouddn.com/xianxing_11.png">
+<meta property="og:image" content="http://oxlm7lfiw.bkt.clouddn.com/xianxing_10.jpg">
+<meta property="og:image" content="http://oxlm7lfiw.bkt.clouddn.com/xianxing_12.jpg">
+<meta property="og:updated_time" content="2018-04-16T13:20:51.213Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="线性分类与最优化学习总结">
+<meta name="twitter:description" content="1.分类器的核心思想上一节介绍的knn算法每次在进行预测时，必须计算预测集与训练集的距离，这样不仅加大了计算量，而且使得预测耗时很长。所以说，我们可以利用训练集，抽象出一个数学模型，作为图片像素值与其对应的标签的一个映射。 这个模型有两部分组成，一部分是评分函数，也就是我们所说的抽象总结出来的映射关系，另一部分是损失函数，这个函数来评价评分函数的好坏，我们的目标，就是使得评分函数预测出来最准确，也">
+<meta name="twitter:image" content="http://oxlm7lfiw.bkt.clouddn.com/xianxing_1.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '5.1.3',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/04/16/线性分类与最优化/"/>
+
+
+
+
+
+  <title>线性分类与最优化学习总结 | Li Shuoshi's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Li Shuoshi's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">NEUQ</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+<li> <a title="把这个链接拖到你的Chrome收藏夹工具栏中" href='javascript:(function() {
+    function c() {
+        var e = document.createElement("link");
+        e.setAttribute("type", "text/css");
+        e.setAttribute("rel", "stylesheet");
+        e.setAttribute("href", f);
+        e.setAttribute("class", l);
+        document.body.appendChild(e)
+    }
+
+    function h() {
+        var e = document.getElementsByClassName(l);
+        for (var t = 0; t < e.length; t++) {
+            document.body.removeChild(e[t])
+        }
+    }
+
+    function p() {
+        var e = document.createElement("div");
+        e.setAttribute("class", a);
+        document.body.appendChild(e);
+        setTimeout(function() {
+            document.body.removeChild(e)
+        }, 100)
+    }
+
+    function d(e) {
+        return {
+            height : e.offsetHeight,
+            width : e.offsetWidth
+        }
+    }
+
+    function v(i) {
+        var s = d(i);
+        return s.height > e && s.height < n && s.width > t && s.width < r
+    }
+
+    function m(e) {
+        var t = e;
+        var n = 0;
+        while (!!t) {
+            n += t.offsetTop;
+            t = t.offsetParent
+        }
+        return n
+    }
+
+    function g() {
+        var e = document.documentElement;
+        if (!!window.innerWidth) {
+            return window.innerHeight
+        } else if (e && !isNaN(e.clientHeight)) {
+            return e.clientHeight
+        }
+        return 0
+    }
+
+    function y() {
+        if (window.pageYOffset) {
+            return window.pageYOffset
+        }
+        return Math.max(document.documentElement.scrollTop, document.body.scrollTop)
+    }
+
+    function E(e) {
+        var t = m(e);
+        return t >= w && t <= b + w
+    }
+
+    function S() {
+        var e = document.createElement("audio");
+        e.setAttribute("class", l);
+        e.src = i;
+        e.loop = false;
+        e.addEventListener("canplay", function() {
+            setTimeout(function() {
+                x(k)
+            }, 500);
+            setTimeout(function() {
+                N();
+                p();
+                for (var e = 0; e < O.length; e++) {
+                    T(O[e])
+                }
+            }, 15500)
+        }, true);
+        e.addEventListener("ended", function() {
+            N();
+            h()
+        }, true);
+        e.innerHTML = " <p>If you are reading this, it is because your browser does not support the audio element. We recommend that you get a new browser.</p> <p>";
+        document.body.appendChild(e);
+        e.play()
+    }
+
+    function x(e) {
+        e.className += " " + s + " " + o
+    }
+
+    function T(e) {
+        e.className += " " + s + " " + u[Math.floor(Math.random() * u.length)]
+    }
+
+    function N() {
+        var e = document.getElementsByClassName(s);
+        var t = new RegExp("\\b" + s + "\\b");
+        for (var n = 0; n < e.length; ) {
+            e[n].className = e[n].className.replace(t, "")
+        }
+    }
+
+    var e = 30;
+    var t = 30;
+    var n = 350;
+    var r = 350;
+    var i = "//s3.amazonaws.com/moovweb-marketing/playground/harlem-shake.mp3";
+    var s = "mw-harlem_shake_me";
+    var o = "im_first";
+    var u = ["im_drunk", "im_baked", "im_trippin", "im_blown"];
+    var a = "mw-strobe_light";
+    var f = "//s3.amazonaws.com/moovweb-marketing/playground/harlem-shake-style.css";
+    var l = "mw_added_css";
+    var b = g();
+    var w = y();
+    var C = document.getElementsByTagName("*");
+    var k = null;
+    for (var L = 0; L < C.length; L++) {
+        var A = C[L];
+        if (v(A)) {
+            if (E(A)) {
+                k = A;
+                break
+            }
+        }
+    }
+    if (A === null) {
+        console.warn("Could not find a node of the right size. Please try a different page.");
+        return
+    }
+    c();
+    S();
+    var O = [];
+    for (var L = 0; L < C.length; L++) {
+        var A = C[L];
+        if (v(A)) {
+            O.push(A)
+        }
+    }
+})()    '>High一下</a> </li>
+
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/04/16/线性分类与最优化/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Shuoshi Li">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Li Shuoshi's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">线性分类与最优化学习总结</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-04-16T21:13:18+08:00">
+                2018-04-16
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/cs231n/" itemprop="url" rel="index">
+                    <span itemprop="name">cs231n</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  2,891字
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  11分钟
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="1-分类器的核心思想"><a href="#1-分类器的核心思想" class="headerlink" title="1.分类器的核心思想"></a>1.分类器的核心思想</h1><p>上一节介绍的knn算法每次在进行预测时，必须计算预测集与训练集的距离，这样不仅加大了计算量，而且使得预测耗时很长。所以说，我们可以利用训练集，抽象出一个数学模型，作为图片像素值与其对应的标签的一个映射。</p>
+<p>这个模型有两部分组成，一部分是评分函数，也就是我们所说的抽象总结出来的映射关系，另一部分是损失函数，这个函数来评价评分函数的好坏，我们的目标，就是使得评分函数预测出来最准确，也就是损失函数最小，所以，我们只要将损失函数最优化，就可以得到一个较为理想的映射关系，从而实现对图片的精准预测。</p>
+<p>最优化的过程，其核心思想为迭代优化，也就是每一次比上一次得出较好的结果，从而实现相对最优。</p>
+<h1 id="2-数学原理"><a href="#2-数学原理" class="headerlink" title="2.数学原理"></a>2.数学原理</h1><h2 id="2-1线性分类器的构建"><a href="#2-1线性分类器的构建" class="headerlink" title="2.1线性分类器的构建"></a>2.1线性分类器的构建</h2><p>首先，我们用线性映射来做一个简单的分类器，即</p>
+<p> <img src="http://oxlm7lfiw.bkt.clouddn.com/xianxing_1.jpg" alt=""></p>
+<p>其中，x <sub>i</sub> 为第i个图像像素信息，W为权重，b为偏差参数，这几个参数都是多维向量，x <sub>i</sub> 是（1，D）矩阵，表示像素信息，W为（D,H）矩阵，b为（H，1）矩阵，其中，H为总类别数，最终得到的是一个（H，1）的矩阵作为评分，分数最高的项对应的类别即为预测图像的类别。</p>
+<p>在这里，W可以理解为图片中每个像素对不同的类别所做的贡献。</p>
+<h2 id="2-2损失函数的构建"><a href="#2-2损失函数的构建" class="headerlink" title="2.2损失函数的构建"></a>2.2损失函数的构建</h2><p>损失函数可以评价我们选择的超参数的好坏。损失函数的核心思想是正确度的程度，比如说正确分类得分远高于其他分类损失函数就比较低，如果正确分类对应得分只是比其他分类分数稍微高一点，那么损失函数就会变高。</p>
+<p>cs231n介绍了两种损失函数：多类支持向量机（SVM）损失函数和softmax损失函数。</p>
+<p><strong>SVM表达式如下：</strong></p>
+<p><img src="http://oxlm7lfiw.bkt.clouddn.com/xianxing_2.jpg" alt=""></p>
+<p>这个式子可以通俗得理解为正确的分类的得分至少要比不正确分类高Delta，如果低于这个阈值，就开始计算损失，否则损失就是0。但是这个表达式有一个问题，W并不唯一，可以成比例缩小放大，如果W扩大两倍，那么两个分类的差值就会扩大两倍，这样我们设定的Delta就没有意义了，所以我们要限制W的大小，其中一个方法就是将其也作为一个损失，与损失函数正相关，这个过程叫做正则化。通常，delta为1.0，真正起到作用的是正则化系数。优化后的损失函数为：</p>
+<p><img src="http://oxlm7lfiw.bkt.clouddn.com/xianxing_3.jpg" alt=""></p>
+<p><strong>softmax表达式如下：</strong></p>
+<p><img src="http://oxlm7lfiw.bkt.clouddn.com/xianxing_4.jpg" alt=""></p>
+<p>在Softmax分类器中，函数映射保持不变，但将这些评分值视为每个分类的未归一化的对数概率，并且将折叶损失替换为交叉熵损失。通俗得说，就是反应这个预测的分类正确的程度。</p>
+<p>可以通过一张图片直观地了解一下两个函数</p>
+<p><img src="http://oxlm7lfiw.bkt.clouddn.com/xianxing_6.jpg" alt=""></p>
+<h2 id="2-2损失函数最优化"><a href="#2-2损失函数最优化" class="headerlink" title="2.2损失函数最优化"></a>2.2损失函数最优化</h2><h3 id="2-2-1最优化方法选择"><a href="#2-2-1最优化方法选择" class="headerlink" title="2.2.1最优化方法选择"></a>2.2.1最优化方法选择</h3><p>得到损失函数之后，我们要做的，就是通过改变权重，把损失降到最小，使得分类器的准确度最高。这个过程就是最优化。那么，权重应该如何改变呢？课程介绍了三种方法：</p>
+<p>1.随机搜索<br>随机搜索就是随机尝试多个权重，然后选出一个最好的权重，但是这个方法效率很低，结果也不理想。</p>
+<p>2.随机本地搜索<br>这是基于随机搜索的改进，首先随机产生一个权重，然后在这个基础上，产生一个随机扰动，只有损失变小的时候，才更新权重，这个方法稍有改进，但是仍然不理想。</p>
+<p>3.跟随梯度<br>总结前两者，我们要找的，就是如何变化权重W，会使损失变小，这个可以看做是下山，我们要确定的，是往下走的方向，这个方向就是损失函数的梯度。也可以理解为一维函数求导来确定方向是增还是减。</p>
+<p>综上所诉，我们选择跟随梯度来进行优化。</p>
+<h3 id="2-2-2梯度计算的方法"><a href="#2-2-2梯度计算的方法" class="headerlink" title="2.2.2梯度计算的方法"></a>2.2.2梯度计算的方法</h3><p>梯度计算有两种方法，一种是近似的方法（数值梯度法），一种是分析梯度法。</p>
+<p>在笔者看来，这两种方法可以类比数学的求导中的定义法和公式法，前者通过给W改变一个极小的量，观察数值的变化，后者则使用微分分析计算梯度。</p>
+<p>二者各有优缺点，前者更容易实现，并且不易出错，后者计算迅速精确，但是求导编程时容易容易计算错误，所以我们一般采用的方法是先用后者编写程序，再用前者对后者进行验证。我们将验证这一步叫做<strong>梯度检查</strong>。</p>
+<p>SVM的微分分析表达式可以分别对W<sub>y<sub>i</sub></sub>与W<sub>j</sub>进行微分，分别得到W<sub>y<sub>i</sub></sub>行与W<sub>j</sub>行的梯度：</p>
+<p>W<sub>y<sub>i</sub></sub>行的梯度如下，大于0时为x<sub>i</sub>否则为0：</p>
+<p><img src="http://oxlm7lfiw.bkt.clouddn.com/xianxing_8.jpg" alt=""></p>
+<p>同理，W<sub>j</sub>行的梯度为：</p>
+<p><img src="http://oxlm7lfiw.bkt.clouddn.com/xianxing_20.jpg" alt=""></p>
+<h3 id="2-2-2梯度计算的方法-1"><a href="#2-2-2梯度计算的方法-1" class="headerlink" title="2.2.2梯度计算的方法"></a>2.2.2梯度计算的方法</h3><p>在实现了梯度的计算之后，我们要做的，就是优化了，我们利用的得到的结果，在负方向上进行更新，得到新的参数，然后再去计算梯度，循环往复，最终就会得到一个相对最优的参数了。</p>
+<h1 id="3-代码思路"><a href="#3-代码思路" class="headerlink" title="3.代码思路"></a>3.代码思路</h1><p>代码分为几个模块，分别是</p>
+<ol>
+<li>数据的处理</li>
+<li>线性分类器的构建</li>
+<li>梯度的计算与校验</li>
+<li>超参数调优</li>
+</ol>
+<h2 id="3-1数据的处理"><a href="#3-1数据的处理" class="headerlink" title="3.1数据的处理"></a>3.1数据的处理</h2><p>数据处理和knn的处理方式类似，为了能够更好的提取出图片的特征，我们对数据进行归一化处理，每一个特征减去平均值来中心化，这里需要注意，<strong>减去的平均值是训练集的平均值</strong>，代码如下：</p>
+<pre><code>mean_image=np.mean(x_train,axis=0)
+x_train‐=mean_image
+x_val‐=mean_image
+x_test‐=mean_image
+</code></pre><h2 id="3-2线性分类器的构建"><a href="#3-2线性分类器的构建" class="headerlink" title="3.2线性分类器的构建"></a>3.2线性分类器的构建</h2><p>我们介绍了两种分类器：svm和softmax，下面分别用代码表达出两种分类器的梯度和损失。</p>
+<h3 id="3-2-1-SVM模块的构建"><a href="#3-2-1-SVM模块的构建" class="headerlink" title="3.2.1 SVM模块的构建"></a>3.2.1 SVM模块的构建</h3><p>代码实现的整个流程如下：</p>
+<ul>
+<li>首先计算得到各分类所对应的socres</li>
+<li>之后标记处正确的分类所对应的分数</li>
+<li>对其他的的分类依次计算损失</li>
+<li><p>如果损失margin大于0，则loss增加margin，并分别对W<sub>y<sub>i</sub></sub>行与W<sub>j</sub>行的梯度，否则进行下一个计算</p>
+<pre><code>for i in range(num_train):
+    scores=X[i].dot(W)
+    correct_class_score=scores[y[i]] #1.1
+    for j in range(num_classes):
+        if j ==y[i]:
+            continue
+        margin=scores[j]‐correct_class_score+1 # 1.2
+        if margin&gt; 0:
+            loss+=margin
+            dW[:,j]+=X[i].T
+            dW[:,y[i]]+=‐X[i].T
+loss /=num_train
+dW /=num_train
+loss+=0.5*reg*np.sum(W*W)
+dW+=reg*W
+</code></pre><p>这是使用的数值进行计算，实际上，我们可以直接利用矩阵进行计算，减少运算量</p>
+<p>  scores = X.dot(W)<br>  correct_class_scores = scores[range(num_train), list(y)].reshape(‐1,1)<br>  margins = np.maximum(0, scores ‐ correct_class_scores + 1)<br>  margins[range(num_train), list(y)] = 0<br>  loss = np.sum(margins) / num_train + 0.5 <em> reg </em> np.sum(W * W)</p>
+<p>  coeff_mat = np.zeros((num_train, num_classes))<br>  coeff_mat[margins &gt; 0] = 1<br>  coeff_mat[range(num_train), list(y)] = 0<br>  coeff_mat[range(num_train), list(y)] = ‐np.sum(coeff_mat, axis=1)</p>
+<p>  dW = (X.T).dot(coeff_mat)<br>  dW = dW / num_train + reg * W</p>
+</li>
+</ul>
+<h3 id="3-2-2-Softmax模块的构建"><a href="#3-2-2-Softmax模块的构建" class="headerlink" title="3.2.2 Softmax模块的构建"></a>3.2.2 Softmax模块的构建</h3><p>Softmax的代码思路和SVM是类似的，同样也可以使用数值计算与矩阵计算，Softmax看似复杂，但是求导的结果却很简单，笔者找到了一个简单清晰的推导过程，如下图：</p>
+<p><img src="http://oxlm7lfiw.bkt.clouddn.com/xianxing_11.png" alt=""></p>
+<p>根据推导过程，我么可以得到和SVM类似形式的代码，首先是数值计算的方式：</p>
+<pre><code>for i in range(num_train):
+    scores=X[i].dot(W)
+    shift_scores=scores-max(scores)
+    loss_i=-shift_scores[y[i]]+np.log(sum(np.exp(shift_scores)))
+    loss+=loss_i
+        for j in range(num_classes):
+            softmax_out=np.exp(shift_scores[j])/sum(np.exp(shift_scores))
+            if j==y[i]:
+                dW[:,j]+=(-1+softmax_out)*X[i]
+            else:
+                dW[:,j]+=softmax_out*X[i]
+loss/=num_train
+loss+=0.5*reg*np.sum(W*W)
+dW=dW/num_train+reg*W
+</code></pre><p>其次是矩阵计算的方式，可以对比两种方式的运算时间，矩阵计算的效果会更好：</p>
+<pre><code>shift_scores=scores-np.max(scores,axis=1).reshape(-1,1) 
+softmax_output=np.exp(shift_scores)/np.sum(np.exp(shift_scores),axis=1).reshape((-1,1))
+loss=-np.sum(np.log(softmax_output[range(num_train),list(y)]))
+loss/=num_train
+loss+=0.5*reg*np.sum(W*W)
+
+dS=softmax_output.copy()
+dS[range(num_train),list(y)]+=-1
+dW=(X.T).dot(dS)
+dW=dW/num_train+reg*W
+return loss,dW
+</code></pre><h3 id="3-2-3-分类器模块的构建"><a href="#3-2-3-分类器模块的构建" class="headerlink" title="3.2.3 分类器模块的构建"></a>3.2.3 分类器模块的构建</h3><p>分类器模块的作用是构建训练模型和预测模型，训练模型利用<strong>随机梯度下降</strong>的方法，根据SVM或者Softmax模块返回的损失值与梯度值，对梯度进行更新，更新的时候，涉及到学习率和正则化系数两个参数设置，关于其优化将在超参数调优模块介绍，此外，还需要设置迭代次数和批尺寸。关于批尺寸，可以看一下课程的介绍。</p>
+<blockquote>
+<p>小批量数据梯度下降（<strong>Mini-batch gradient descent</strong>）：在大规模的应用中（比如ILSVRC挑战赛），训练数据可以达到百万级量级。如果像这样计算整个训练集，来获得仅仅一个参数的更新就太浪费了。一个常用的方法是计算训练集中的小批量（ <strong>batches</strong>）数据。例如，在目前最高水平的卷积神经网络中，一个典型的小批量包含256个例子，而整个训练集是多少呢？一百二十万个。这个小批量数据就用来实现一个参数更新。</p>
+</blockquote>
+<p>设置好参数并导入数据后，我们就可以更新梯度了：</p>
+<pre><code>loss, grad = self.loss(X_batch, y_batch, reg)
+loss_history.append(loss)
+self.W += ‐1 * learning_rate * grad
+</code></pre><p>到此，完成了分类器，也就是我们核心模块的构建。</p>
+<h2 id="3-3梯度的计算与校验"><a href="#3-3梯度的计算与校验" class="headerlink" title="3.3梯度的计算与校验"></a>3.3梯度的计算与校验</h2><p>前面提到，使用微分的方式求梯度容易犯错误，所以说，当我们完成模型的构建之后，要先进行检验，判断其正确与否。梯度校验公式如下：</p>
+<p><img src="http://oxlm7lfiw.bkt.clouddn.com/xianxing_10.jpg" alt=""></p>
+<p>我们分别采用两种方式计算梯度值，然后使用先对误差来比较数值梯度和解析梯度的差。关于其结果的好坏，我们可以看一看课程给出的解释：<br><img src="http://oxlm7lfiw.bkt.clouddn.com/xianxing_12.jpg" alt=""></p>
+<h2 id="3-4超参数调优"><a href="#3-4超参数调优" class="headerlink" title="3.4超参数调优"></a>3.4超参数调优</h2><p>与knn一样，我们这里也使用交叉验证的方式，根据验证集正确率的高低，选择出较好的学习率与正则化系数。</p>
+<h1 id="4-使用到的一些代码"><a href="#4-使用到的一些代码" class="headerlink" title="4.使用到的一些代码"></a>4.使用到的一些代码</h1><p>1.verbose参数</p>
+<pre><code>def train(self, X, y, learning_rate=1e‐3, reg=1e‐5,num_iters=100,batch_size=200,verbose=False):
+</code></pre><p>verbose参数起到一个设定显示迭代过程与否的作用，在本分类其中，其对应如下代码：</p>
+<pre><code>if verbose and it % 100 == 0:
+    print(&apos;iteration %d / %d: loss %f&apos; % (it, num_iters,loss))
+</code></pre><p>2.lamba表达式：</p>
+<p>可以这样认为，lambda作为一个表达式，定义了一个匿名函数，比如如下例子：</p>
+<pre><code>g = lambda x:x+1
+</code></pre><p>可以通过其执行结果直观的了解其用法：</p>
+<pre><code>g(1)
+&gt;&gt;&gt;2
+g(2)
+&gt;&gt;&gt;3
+</code></pre><h1 id="5-完整代码"><a href="#5-完整代码" class="headerlink" title="5.完整代码"></a>5.完整代码</h1><p>github地址：</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>欢迎	打赏</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="Shuoshi Li 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="Shuoshi Li 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/SVM/" rel="tag"># SVM</a>
+          
+            <a href="/tags/softmax/" rel="tag"># softmax</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/04/13/opencv/" rel="next" title="Ubuntu 16.04下安装支持Python2.7的opencv">
+                <i class="fa fa-chevron-left"></i> Ubuntu 16.04下安装支持Python2.7的opencv
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/avatar.gif"
+                alt="Shuoshi Li" />
+            
+              <p class="site-author-name" itemprop="name">Shuoshi Li</p>
+              <p class="site-description motion-element" itemprop="description">hello,world</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">5</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">5</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          <div class="links-of-author motion-element">
+            
+              
+                <span class="links-of-author-item">
+                  <a href="mailto:lishuoshi1996@foxmail.com" target="_blank" title="E-Mail">
+                    
+                      <i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="http://sighttp.qq.com/msgrd?v=1&uin=1510258985" target="_blank" title="QQ">
+                    
+                      <i class="fa fa-fw fa-instagram"></i>QQ</a>
+                </span>
+              
+            
+          </div>
+
+          
+          
+
+          
+          
+
+
+<iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=27876900&auto=0&height=66"></iframe>
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-分类器的核心思想"><span class="nav-number">1.</span> <span class="nav-text">1.分类器的核心思想</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-数学原理"><span class="nav-number">2.</span> <span class="nav-text">2.数学原理</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1线性分类器的构建"><span class="nav-number">2.1.</span> <span class="nav-text">2.1线性分类器的构建</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2损失函数的构建"><span class="nav-number">2.2.</span> <span class="nav-text">2.2损失函数的构建</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2损失函数最优化"><span class="nav-number">2.3.</span> <span class="nav-text">2.2损失函数最优化</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-1最优化方法选择"><span class="nav-number">2.3.1.</span> <span class="nav-text">2.2.1最优化方法选择</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-2梯度计算的方法"><span class="nav-number">2.3.2.</span> <span class="nav-text">2.2.2梯度计算的方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-2梯度计算的方法-1"><span class="nav-number">2.3.3.</span> <span class="nav-text">2.2.2梯度计算的方法</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-代码思路"><span class="nav-number">3.</span> <span class="nav-text">3.代码思路</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#3-1数据的处理"><span class="nav-number">3.1.</span> <span class="nav-text">3.1数据的处理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-2线性分类器的构建"><span class="nav-number">3.2.</span> <span class="nav-text">3.2线性分类器的构建</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-1-SVM模块的构建"><span class="nav-number">3.2.1.</span> <span class="nav-text">3.2.1 SVM模块的构建</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-2-Softmax模块的构建"><span class="nav-number">3.2.2.</span> <span class="nav-text">3.2.2 Softmax模块的构建</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-3-分类器模块的构建"><span class="nav-number">3.2.3.</span> <span class="nav-text">3.2.3 分类器模块的构建</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-3梯度的计算与校验"><span class="nav-number">3.3.</span> <span class="nav-text">3.3梯度的计算与校验</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-4超参数调优"><span class="nav-number">3.4.</span> <span class="nav-text">3.4超参数调优</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-使用到的一些代码"><span class="nav-number">4.</span> <span class="nav-text">4.使用到的一些代码</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-完整代码"><span class="nav-number">5.</span> <span class="nav-text">5.完整代码</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Shuoshi Li</span>
+
+  
+</div>
+
+
+<div class="powered-by">
+<i class="fa fa-user-md"></i><span id="busuanzi_container_site_pv">
+  本站访客数:<span id="busuanzi_value_site_uv"></span>
+</span>
+</div>
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Pisces</a> v5.1.3</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.3"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.3"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.3"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.3"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.3"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

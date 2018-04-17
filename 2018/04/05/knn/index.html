@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.3" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.3">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.3" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="knn," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="1.分类器的核心思想将图片数字化，计算测试集每张图片的每个像素点与训练集每张图片的每个像素点的距离,将距离排序，选取前k个最小距离的类别输出进行预测。(当k=0时，就是nn，否则为knn) 2.数学原理在本算法中，主要用到的数学知识是对两个图片的距离进行计算，cs231n介绍了两种距离，分别是L1距离和L2距离。在计算距离之前，首先将图片转化为像素块，然后逐块进行计算。L1距离：像素块直接逐块做差">
+<meta name="keywords" content="knn">
+<meta property="og:type" content="article">
+<meta property="og:title" content="nn与knn学习总结">
+<meta property="og:url" content="http://yoursite.com/2018/04/05/knn/index.html">
+<meta property="og:site_name" content="Li Shuoshi&#39;s Blog">
+<meta property="og:description" content="1.分类器的核心思想将图片数字化，计算测试集每张图片的每个像素点与训练集每张图片的每个像素点的距离,将距离排序，选取前k个最小距离的类别输出进行预测。(当k=0时，就是nn，否则为knn) 2.数学原理在本算法中，主要用到的数学知识是对两个图片的距离进行计算，cs231n介绍了两种距离，分别是L1距离和L2距离。在计算距离之前，首先将图片转化为像素块，然后逐块进行计算。L1距离：像素块直接逐块做差">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2018-04-06T04:06:37.798Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="nn与knn学习总结">
+<meta name="twitter:description" content="1.分类器的核心思想将图片数字化，计算测试集每张图片的每个像素点与训练集每张图片的每个像素点的距离,将距离排序，选取前k个最小距离的类别输出进行预测。(当k=0时，就是nn，否则为knn) 2.数学原理在本算法中，主要用到的数学知识是对两个图片的距离进行计算，cs231n介绍了两种距离，分别是L1距离和L2距离。在计算距离之前，首先将图片转化为像素块，然后逐块进行计算。L1距离：像素块直接逐块做差">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '5.1.3',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/04/05/knn/"/>
+
+
+
+
+
+  <title>nn与knn学习总结 | Li Shuoshi's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Li Shuoshi's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">NEUQ</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+<li> <a title="把这个链接拖到你的Chrome收藏夹工具栏中" href='javascript:(function() {
+    function c() {
+        var e = document.createElement("link");
+        e.setAttribute("type", "text/css");
+        e.setAttribute("rel", "stylesheet");
+        e.setAttribute("href", f);
+        e.setAttribute("class", l);
+        document.body.appendChild(e)
+    }
+
+    function h() {
+        var e = document.getElementsByClassName(l);
+        for (var t = 0; t < e.length; t++) {
+            document.body.removeChild(e[t])
+        }
+    }
+
+    function p() {
+        var e = document.createElement("div");
+        e.setAttribute("class", a);
+        document.body.appendChild(e);
+        setTimeout(function() {
+            document.body.removeChild(e)
+        }, 100)
+    }
+
+    function d(e) {
+        return {
+            height : e.offsetHeight,
+            width : e.offsetWidth
+        }
+    }
+
+    function v(i) {
+        var s = d(i);
+        return s.height > e && s.height < n && s.width > t && s.width < r
+    }
+
+    function m(e) {
+        var t = e;
+        var n = 0;
+        while (!!t) {
+            n += t.offsetTop;
+            t = t.offsetParent
+        }
+        return n
+    }
+
+    function g() {
+        var e = document.documentElement;
+        if (!!window.innerWidth) {
+            return window.innerHeight
+        } else if (e && !isNaN(e.clientHeight)) {
+            return e.clientHeight
+        }
+        return 0
+    }
+
+    function y() {
+        if (window.pageYOffset) {
+            return window.pageYOffset
+        }
+        return Math.max(document.documentElement.scrollTop, document.body.scrollTop)
+    }
+
+    function E(e) {
+        var t = m(e);
+        return t >= w && t <= b + w
+    }
+
+    function S() {
+        var e = document.createElement("audio");
+        e.setAttribute("class", l);
+        e.src = i;
+        e.loop = false;
+        e.addEventListener("canplay", function() {
+            setTimeout(function() {
+                x(k)
+            }, 500);
+            setTimeout(function() {
+                N();
+                p();
+                for (var e = 0; e < O.length; e++) {
+                    T(O[e])
+                }
+            }, 15500)
+        }, true);
+        e.addEventListener("ended", function() {
+            N();
+            h()
+        }, true);
+        e.innerHTML = " <p>If you are reading this, it is because your browser does not support the audio element. We recommend that you get a new browser.</p> <p>";
+        document.body.appendChild(e);
+        e.play()
+    }
+
+    function x(e) {
+        e.className += " " + s + " " + o
+    }
+
+    function T(e) {
+        e.className += " " + s + " " + u[Math.floor(Math.random() * u.length)]
+    }
+
+    function N() {
+        var e = document.getElementsByClassName(s);
+        var t = new RegExp("\\b" + s + "\\b");
+        for (var n = 0; n < e.length; ) {
+            e[n].className = e[n].className.replace(t, "")
+        }
+    }
+
+    var e = 30;
+    var t = 30;
+    var n = 350;
+    var r = 350;
+    var i = "//s3.amazonaws.com/moovweb-marketing/playground/harlem-shake.mp3";
+    var s = "mw-harlem_shake_me";
+    var o = "im_first";
+    var u = ["im_drunk", "im_baked", "im_trippin", "im_blown"];
+    var a = "mw-strobe_light";
+    var f = "//s3.amazonaws.com/moovweb-marketing/playground/harlem-shake-style.css";
+    var l = "mw_added_css";
+    var b = g();
+    var w = y();
+    var C = document.getElementsByTagName("*");
+    var k = null;
+    for (var L = 0; L < C.length; L++) {
+        var A = C[L];
+        if (v(A)) {
+            if (E(A)) {
+                k = A;
+                break
+            }
+        }
+    }
+    if (A === null) {
+        console.warn("Could not find a node of the right size. Please try a different page.");
+        return
+    }
+    c();
+    S();
+    var O = [];
+    for (var L = 0; L < C.length; L++) {
+        var A = C[L];
+        if (v(A)) {
+            O.push(A)
+        }
+    }
+})()    '>High一下</a> </li>
+
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/04/05/knn/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Shuoshi Li">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Li Shuoshi's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">nn与knn学习总结</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-04-05T23:32:18+08:00">
+                2018-04-05
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/cs231n/" itemprop="url" rel="index">
+                    <span itemprop="name">cs231n</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  1,130字
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  4分钟
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="1-分类器的核心思想"><a href="#1-分类器的核心思想" class="headerlink" title="1.分类器的核心思想"></a>1.分类器的核心思想</h2><p>将图片数字化，计算测试集每张图片的每个像素点与训练集每张图片的每个像素点的距离,将距离排序，选取前k个最小距离的类别输出进行预测。(当k=0时，就是nn，否则为knn)</p>
+<h2 id="2-数学原理"><a href="#2-数学原理" class="headerlink" title="2.数学原理"></a>2.数学原理</h2><p>在本算法中，主要用到的数学知识是对两个图片的距离进行计算，cs231n介绍了两种距离，分别是L1距离和L2距离。<br>在计算距离之前，首先将图片转化为像素块，然后逐块进行计算。<br>L1距离：像素块直接逐块做差，然后绝对值相加<br>L2距离：像素块做差后，进行平方，然后逐块相加。L2距离也可以理解为向量之间的欧式距离。</p>
+<h2 id="3-代码思路"><a href="#3-代码思路" class="headerlink" title="3.代码思路"></a>3.代码思路</h2><p>代码分为几个模块，分别是：</p>
+<ol>
+<li>数据载入</li>
+<li>knn模型的构建</li>
+<li>训练及预测</li>
+<li>交叉验证调参</li>
+</ol>
+<h3 id="3-1数据的载入"><a href="#3-1数据的载入" class="headerlink" title="3.1数据的载入"></a>3.1数据的载入</h3><p>cs231n采用的cifar10数据集，使用pickle模块将数据集进行导入，并将5份训练集与一份数据集转化为大小为(10000,32,32,3)数组。将此模块命名为data_units，方便进行调用。</p>
+<h3 id="3-2knn模型的构建"><a href="#3-2knn模型的构建" class="headerlink" title="3.2knn模型的构建"></a>3.2knn模型的构建</h3><p>本模型的重点，在于像素块之间距离的计算，为了方便计算在，计算之前，需要将训练集和测试集的数据信息拉伸为行向量，即分别变为 (10000,3072)和(5000,3072)的矩阵形式。</p>
+<p>之后便是距离的计算，采用如下代码：</p>
+<pre><code>for i in xrange(num_test):
+distances = np.sum(np.abs(self.Xtr ‐ X[i,:]), axis = 1)
+</code></pre><p>其中，num_test为测试集中，图片的数量，这是采用L1距离计算的代码，如果采用L2距离进行计算，只需将其改为</p>
+<pre><code>distances = np.sqrt(np.sum(np.square(self.Xtr ‐ X[i,:]), axis = 1))
+</code></pre><h3 id="3-3训练及预测"><a href="#3-3训练及预测" class="headerlink" title="3.3训练及预测"></a>3.3训练及预测</h3><p>knn不需要对模型进行训练，但是需要计算测试集图片与每一个训练集图片的距离，在对测试集进行预测时，找出distance矩阵中每一行向量中最小k个数值所对应的分类标签，然后进行头片，对训练集进行预测。</p>
+<h3 id="3-4交叉验证调参"><a href="#3-4交叉验证调参" class="headerlink" title="3.4交叉验证调参"></a>3.4交叉验证调参</h3><p>在模型等构建好之后，进行参数的调节，包括k的取值与使用何种距离进行计算，选出结果验证最好的参数，具体方法如下</p>
+<blockquote>
+<p>k-NN分类器需要设定k值，那么选择哪个k值最合适的呢？我们可以选择不同的距离函数，比如L1范数和L2范数等，那么选哪个好？你可能会建议尝试不同的值，看哪个值表现最好就选哪个。好主意！我们就是这么做的，但这样做的时候要非常细心。特别注意：决不能使用测试集来进行调优。当你在设计机器学习算法的时候，应该把测试集看做非常珍贵的资源，不到最后一步，绝不使用它。如果你使用测试集来调优，而且算法看起来效果不错，那么真正的危险在于：算法实际部署后，性能可能会远低于预期。这种情况，称之为算法对测试集过拟合。应该从训练集中取出一部分数据用来调优，选出合适的超参数</p>
+</blockquote>
+<h2 id="4-使用到的一些代码"><a href="#4-使用到的一些代码" class="headerlink" title="4.使用到的一些代码"></a>4.使用到的一些代码</h2><p>（1）</p>
+<pre><code>num_test=X.shape[0]
+</code></pre><p>将矩阵X第一维的长度赋值给num_test。</p>
+<p>（2）</p>
+<pre><code>x=x.reshape(10000,3,32,32).transpose(0,2,3,1).astype(&apos;float&apos;)    
+</code></pre><p>先将矩阵x变为(10000,3,32,32)，然后把各个维度重新排序，变为了(10000,32,32,3)，数据类型为浮点型。将像素数据拉伸为行向量时，也用到了reshape，如下，其中的-1表示行向量确定，列向量自动计算：</p>
+<pre><code>x_train=np.reshape(x_train,(x_train.shape[0],‐1))
+</code></pre><p>（3）</p>
+<pre><code>for b in range(1,6):
+f=os.path.join(root,&apos;data_batch_%d&apos; % (b,))
+x,y=load_cifar_batch(f)
+xs.append(x)
+ys.append(y)
+Xtrain=np.concatenate(xs)
+</code></pre><p>np.concatenate(xs) 对xs中的第一维度进行拼接，在这里就是将5个(2000,32,32,3)的训练集拼接为一个(10000,32,32,3)的训练集。</p>
+<p>（4）</p>
+<pre><code>idxs=np.random.choice(idxs,samples_per_class,replace=False)
+</code></pre><p>从ids中，不重复得随机选取samples_ per_class个内容，函数可以从一个int数字或1维array里随机选取内容，并将选取结果放入n维array中返回。</p>
+<h2 id="5-完整代码"><a href="#5-完整代码" class="headerlink" title="5.完整代码"></a>5.完整代码</h2><p>github：</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>欢迎	打赏</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="Shuoshi Li 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="Shuoshi Li 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/knn/" rel="tag"># knn</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/11/07/卡尔曼滤波的原理/" rel="next" title="卡尔曼滤波（一）">
+                <i class="fa fa-chevron-left"></i> 卡尔曼滤波（一）
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/04/13/opencv/" rel="prev" title="Ubuntu 16.04下安装支持Python2.7的opencv">
+                Ubuntu 16.04下安装支持Python2.7的opencv <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/avatar.gif"
+                alt="Shuoshi Li" />
+            
+              <p class="site-author-name" itemprop="name">Shuoshi Li</p>
+              <p class="site-description motion-element" itemprop="description">hello,world</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">5</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">5</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          <div class="links-of-author motion-element">
+            
+              
+                <span class="links-of-author-item">
+                  <a href="mailto:lishuoshi1996@foxmail.com" target="_blank" title="E-Mail">
+                    
+                      <i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="http://sighttp.qq.com/msgrd?v=1&uin=1510258985" target="_blank" title="QQ">
+                    
+                      <i class="fa fa-fw fa-instagram"></i>QQ</a>
+                </span>
+              
+            
+          </div>
+
+          
+          
+
+          
+          
+
+
+<iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=27876900&auto=0&height=66"></iframe>
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-分类器的核心思想"><span class="nav-number">1.</span> <span class="nav-text">1.分类器的核心思想</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-数学原理"><span class="nav-number">2.</span> <span class="nav-text">2.数学原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-代码思路"><span class="nav-number">3.</span> <span class="nav-text">3.代码思路</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1数据的载入"><span class="nav-number">3.1.</span> <span class="nav-text">3.1数据的载入</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2knn模型的构建"><span class="nav-number">3.2.</span> <span class="nav-text">3.2knn模型的构建</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3训练及预测"><span class="nav-number">3.3.</span> <span class="nav-text">3.3训练及预测</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4交叉验证调参"><span class="nav-number">3.4.</span> <span class="nav-text">3.4交叉验证调参</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-使用到的一些代码"><span class="nav-number">4.</span> <span class="nav-text">4.使用到的一些代码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-完整代码"><span class="nav-number">5.</span> <span class="nav-text">5.完整代码</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Shuoshi Li</span>
+
+  
+</div>
+
+
+<div class="powered-by">
+<i class="fa fa-user-md"></i><span id="busuanzi_container_site_pv">
+  本站访客数:<span id="busuanzi_value_site_uv"></span>
+</span>
+</div>
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Pisces</a> v5.1.3</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.3"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.3"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.3"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.3"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.3"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
